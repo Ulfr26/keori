@@ -1,68 +1,126 @@
 // Definitions of all the different data structures needed for rendering
 // This defines vectors and vector arithmetic, (more to come)
 
-use std::ops::Add;
+use std::ops::{Add, Sub, Mul};
 
 #[derive(Debug, Clone)]
-pub struct Point {
-    x: f64,
-    y: f64,
-    z: f64,
+pub struct Vector {
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
+    pub w: f64,
 }
 
 #[derive(Debug, Clone)]
-pub struct Vector3 {
-    x: f64,
-    y: f64,
-    z: f64,
+pub struct Matrix {
+    pub vals: [[f64; 4]; 4],
 }
 
-impl Vector3 {
-    pub fn new() -> Vector3 {
-        Vector3 {
+impl Vector {
+    pub fn new() -> Vector {
+        Vector {
             x: 0f64,
             y: 0f64,
             z: 0f64,
+            w: 1f64,
         }
     }
 
-    pub fn from(x: f64, y: f64, z: f64) -> Vector3 {
-        Vector3 {
+    pub fn from(x: f64, y: f64, z: f64, w: f64) -> Vector {
+        Vector {
             x: x,
             y: y,
             z: z,
+            w: w,
         }
     }
 
-    // Cross product between two vectors
-    pub fn cross(v1: Vector3, v2: Vector3) -> Vector3 {
-        Vector3 {
-            x: v1.y*v2.z - v1.z*v2.y,
-            y: v1.z*v2.x - v1.x*v2.z,
-            z: v1.x*v2.y - v1.y*v2.x,
-        }
+    pub fn magnitude(self) -> f64 {
+        (self.x.powf(2.0) + self.y.powf(2.0) + self.z.powf(2.0)).powf(0.5)
     }
 
     // Keep direction of vector but set magnitude to 1
     pub fn normalise(&mut self) {
-        let x = self.x;
-        let y = self.y;
-        let z = self.z;
-        let m = (x.powf(2.0) + y.powf(2.0) + z.powf(2.0)).powf(2.0);
-        self.x = x/m;
-        self.y = y/m;
-        self.z = z/m;
+        let m = self.clone().magnitude();
+
+        self.x /= m;
+        self.y /= m;
+        self.z /= m;
+    }
+
+    pub fn normalised(self) -> Vector {
+        let mut v = self.clone();
+
+        v.normalise();
+        v
     }
 }
 
-impl Add<Vector3> for Vector3 {
-    type Output = Vector3;
+impl Mul<f64> for Vector {
+    type Output = Vector;
 
-    fn add(self, _rhs: Vector3) -> Vector3 {
-        Vector3 {
-            x: self.x + _rhs.x,
-            y: self.y + _rhs.y,
-            z: self.z + _rhs.z,
+    fn mul(self, rhs: f64) -> Vector {
+        Vector::from(self.x * rhs, self.y * rhs, self.z * rhs, self.w)
+    }
+}
+
+impl Add<Vector> for Vector {
+    type Output = Vector;
+
+    fn add(self, rhs: Vector) -> Vector {
+        Vector::from(self.x + rhs.x, self.y + rhs.y, self.z + rhs.z, self.w)
+    }
+}
+
+impl Sub<Vector> for Vector {
+    type Output = Vector;
+
+    fn sub(self, rhs: Vector) -> Vector {
+        Vector::from(self.x - rhs.x, self.y - rhs.y, self.z - rhs.z, self.w)
+    }
+}
+
+impl Matrix {
+    pub fn new() -> Matrix {
+        Matrix {
+            vals: [[0f64; 4]; 4],
+        }
+    }
+}
+
+impl Mul<Vector> for Matrix {
+    type Output = Vector;
+
+    fn mul(self, rhs: Vector) -> Vector {
+        Vector {
+            x: self.vals[0][0]*rhs.x + self.vals[0][1]*rhs.y + self.vals[0][2]*rhs.z + self.vals[0][3]*rhs.w,
+            y: self.vals[1][0]*rhs.x + self.vals[1][1]*rhs.y + self.vals[1][2]*rhs.z + self.vals[1][3]*rhs.w,
+            z: self.vals[2][0]*rhs.x + self.vals[2][1]*rhs.y + self.vals[2][2]*rhs.z + self.vals[2][3]*rhs.w,
+            w: self.vals[3][0]*rhs.x + self.vals[3][1]*rhs.y + self.vals[3][2]*rhs.z + self.vals[3][3]*rhs.w,
+        }
+    }
+}
+
+impl Mul<Matrix> for Matrix {
+    type Output = Matrix;
+
+    fn mul(self, rhs: Matrix) -> Matrix {
+        let mut vals = [[0f64; 4]; 4];
+        
+        // Watch as I condense matrix multiplication into the worst thing ever:
+        // A triple nested for loop. Fun for the whole family! That is if you have a family of
+        // masochists, though frankly I think 'masochist' and 'programmer' mean the same thing.
+        for i in 0..4 {
+            for j in 0..4 {
+                for k in 0..4 {
+                    vals[i][j] += self.vals[i][k]*rhs.vals[k][j];
+                }
+            }
+        }
+
+        // Bruh
+        Matrix {
+            vals: vals,
         }
     }
 }
