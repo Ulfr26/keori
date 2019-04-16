@@ -13,7 +13,7 @@ pub struct Vector {
 
 #[derive(Debug, Clone)]
 pub struct Matrix {
-    pub vals: [[f64; 4]; 4],
+    pub vals: [[f64; 54]; 4],
 }
 
 impl Vector {

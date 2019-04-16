@@ -7,18 +7,30 @@ use crate::structures::*;
 pub struct Device {
     // The width and height of the screen. This will of course be the dimensions of the terminal.
     pub dimensions: (usize, usize),
-    pub camera: Camera,
+    pub camera: Camera [ID],
     pub meshes: Vec<Mesh>,
+    pub pixels: Vec<Color>,
 }
 
 impl Device {
-    pub fn new(camera: Camera, meshes: Vec<Mesh>) -> Device {
+    pub fn new(camera: Camera, meshes: Vec<Mesh>, colour_space: Color) -> Device {
+        let colour = match colour_space {
+            Color::Rgba => Color::Rgba(0.0, 0.0, 0.0, 0.0),
+            Color::Grey => Color::Grey(0.0),
+        }
+
+        let dimensions = term_size::dimensions().unwrap();
+
         Device {
             dimensions: term_size::dimensions().unwrap(),
             camera: camera,
             meshes: meshes,
+            pixels: vec![colour; dimensions.0 * dimensions.1],
         }
     }
+
+    // Make an array of pixels, probably one dimensional array. Then make a function that takes in
+    // an x and y and sets that pixel to that colour. Then make functions for lines and triangles.
 
     pub fn render(&self) {
         // The main function that renders all the meshes to the screen. Let's do this!

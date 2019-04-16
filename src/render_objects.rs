@@ -5,6 +5,11 @@ use crate::structures::Vector;
 use std::fs::File;
 use std::io::prelude::*;
 
+pub enum Colour {
+    Rgba(f64, f64, f64, f64), // (r, g, b, a)
+    Grey(f64),                // (a)
+}
+
 // The point of view of which to render from
 #[derive(Debug, Clone)]
 pub struct Camera {
@@ -13,11 +18,18 @@ pub struct Camera {
     pub up: Vector,
 }
 
+#[derive(Debug, Clone)]
+pub struct Face {
+    pub verticies: [&Vector; 3],
+    pub colour: Colour,
+}
+
 // A mesh to be rendered. Contains vertex information and the like.
 #[derive(Debug, Clone)]
 pub struct Mesh {
     pub name: String,
     pub verticies: Vec<Vector>,
+    pub faces: Vec<Face>,
     pub pos: Vector,
     pub rot: Vector,
 }
