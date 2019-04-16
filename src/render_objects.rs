@@ -5,6 +5,7 @@ use crate::structures::Vector;
 use std::fs::File;
 use std::io::prelude::*;
 
+#[derive(Debug, Clone)]
 pub enum Colour {
     Rgba(f64, f64, f64, f64), // (r, g, b, a)
     Grey(f64),                // (a)
@@ -20,7 +21,7 @@ pub struct Camera {
 
 #[derive(Debug, Clone)]
 pub struct Face {
-    pub verticies: [&Vector; 3],
+    pub verticies: [usize; 3],
     pub colour: Colour,
 }
 
@@ -57,15 +58,19 @@ impl Mesh {
         Mesh {
             name: name,
             verticies: Vec::new(),
+            faces: Vec::new(),
             pos: Vector::new(),
             rot: Vector::new(),
         }
     }
 
-    pub fn from(name: String, verticies: Vec<Vector>, pos: Vector, rot: Vector) -> Mesh {
+    pub fn from(name: String, verticies: Vec<Vector>, faces: Vec<Face>, pos: Vector, rot: Vector) -> Mesh {
+        // This function is pretty much useless because actually implementing it would be horrific.
+        // Instead, use from_file.
         Mesh {
             name: name,
             verticies: verticies,
+            faces: faces,
             pos: pos,
             rot: rot,
         }
@@ -78,37 +83,52 @@ impl Mesh {
         let mut contents = String::new();
 
         f.read_to_string(&mut contents).unwrap();
-
-        // The file data should be in the form:
-        // 
-        // x1 y1 z1
-        // x2 y2 z2
-        // x3 y3 x3
-        // ...
-        //
-        // And so on for all the vectors. This should give an easy to input and easy to parse file
-        // from which we can create our mesh
         
         let mut lines: Vec<&str> = contents.split("\n").collect();
-        let mut vec_data: Vec<Vector> = Vec::new();
+        let mut vertex_data: Vec<Vector> = Vec::new();
+        let mut face_data: Vec<Face> = Vec::new();
 
         for i in 0..(lines.len()-1) { // Note that the last element of lines is an empty list.
             let mut l: Vec<&str> = lines[i].split(" ").collect();
-            let mut v = Vector::new();
 
-            v.x = l[0].parse::<f64>().unwrap();
-            v.y = l[1].parse::<f64>().unwrap();
-            v.z = l[2].parse::<f64>().unwrap();
-            v.w = 1.0;
+            match l[0] {
+                "v" => {
+                    let mut v = Vector::new();
 
-            vec_data.push(v);
+                    v.x = l[1].parse::<f64>().unwrap();
+                    v.y = l[2].parse::<f64>().unwrap();
+                    v.z = l[3].parse::<f64>().unwrap();
+                    v.w = 1.0;
+
+                    vertex_data.push(v);
+                },
+
+                "f" => {
+                    let mut f = Face::from(
+                        l[1].parse::<usize>().unwrap(),
+                        l[2].parse::<usize>().unwrap(),
+                        l[3].parse::<usize>().unwrap(),
+                        Colour::Grey(0.0);
+                    );
+                }
+            }
         }
 
         Mesh {
             name: name,
             verticies: vec_data,
+            faces: face_data,
             pos: pos,
             rot: rot,
         }
     }
+}
+
+impl Face {
+    fn new(v1: usize, v2: usize, v3: usize, colour: Colour) -> Face {
+        Face {
+            verticies: [v1, v2, v3],
+            colour: colour,
+        }
+    } 
 }
