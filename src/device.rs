@@ -3,6 +3,7 @@
 
 use crate::render_objects::*;
 use crate::structures::*;
+use std::cmp;
 
 pub struct Device<'a> {
     // The width and height of the screen. This will of course be the dimensions of the terminal.
@@ -268,9 +269,30 @@ impl<'a> Device<'a> {
         }
 
         else {
+            // This doesn't quite work yet... Just don't use it?
             self.draw_line_fast((p1.0 as usize, p1.1 as usize), (p2.0 as usize, p2.1 as usize), colour.clone());
             self.draw_line_fast((p2.0 as usize, p2.1 as usize), (p3.0 as usize, p3.1 as usize), colour.clone());
             self.draw_line_fast((p3.0 as usize, p3.1 as usize), (p1.0 as usize, p1.1 as usize), colour.clone());
         }
+    }
+
+    pub fn fill_triangle(&self, p1: (f64, f64), p2: (f64, f64), p3: (f64, f64), colour: Colour) {
+        let min = (cmp::min(cmp::min(p1.0, p2.0), p3.0), cmp::min(cmp::min(p1.1, p2.1), p3.1));
+        let max = (cmp::max(cmp::max(p1.0, p2.0), p3.0), cmp::max(cmp::max(p1.1, p2.1), p3.1));
+
+        let vs1 = (p2.0 - p1.0, p2.1 - p1.1);
+        let vs2 = (p3.0 - p1.0, p3.1 - p1.1);
+
+        for x in (min.0)..(max.0+1) {
+            for y in (min.1)..(max.1+1) {
+                let q = (x - p1.0, y - p1.1);
+
+                // TODO
+            }
+        }
+    }
+
+    fn cross_point(p1: (f64, f64), p2: (f64, f64)) -> f64 {
+        return (p1.0*p2.1)-(p1.1*p2.0);
     }
 }
