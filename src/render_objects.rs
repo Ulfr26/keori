@@ -20,17 +20,17 @@ pub struct Camera {
 }
 
 #[derive(Debug, Clone)]
-pub struct Face {
-    pub verticies: [usize; 3],
+pub struct Face<'a> {
+    pub verticies: [&'a Vector; 3],
     pub colour: Colour,
 }
 
 // A mesh to be rendered. Contains vertex information and the like.
 #[derive(Debug, Clone)]
-pub struct Mesh {
+pub struct Mesh<'a> {
     pub name: String,
     pub verticies: Vec<Vector>,
-    pub faces: Vec<Face>,
+    pub faces: Vec<Face<'a>>,
     pub pos: Vector,
     pub rot: Vector,
 }
@@ -53,8 +53,8 @@ impl Camera {
     }
 }
 
-impl Mesh {
-    pub fn new(name: String) -> Mesh {
+impl<'a> Mesh<'a> {
+    pub fn new(name: String) -> Mesh<'a> {
         Mesh {
             name: name,
             verticies: Vec::new(),
@@ -64,7 +64,7 @@ impl Mesh {
         }
     }
 
-    pub fn from(name: String, verticies: Vec<Vector>, faces: Vec<Face>, pos: Vector, rot: Vector) -> Mesh {
+    pub fn from(name: String, verticies: Vec<Vector>, faces: Vec<Face<'a>>, pos: Vector, rot: Vector) -> Mesh<'a> {
         // This function is pretty much useless because actually implementing it would be horrific.
         // Instead, use from_file.
         Mesh {
@@ -78,7 +78,7 @@ impl Mesh {
 
     // Reads a file containing vector information and returns a mesh.
     // Much easier than just making a vector with the information like *some people I know*
-    pub fn from_file(name: String, filename: String, pos: Vector, rot: Vector) -> Mesh {
+    pub fn from_file(name: String, filename: String, pos: Vector, rot: Vector) -> Result<Mesh<'a>, String> {
         let mut f: File = File::open(filename).unwrap();
         let mut contents = String::new();
 
@@ -87,6 +87,14 @@ impl Mesh {
         let mut lines: Vec<&str> = contents.split("\n").collect();
         let mut vertex_data: Vec<Vector> = Vec::new();
         let mut face_data: Vec<Face> = Vec::new();
+
+        let mut mesh = Mesh {
+            name: name,
+            verticies: Vec::new(),
+            faces: Vec::new(),
+            pos: pos,
+            rot: rot,
+        };
 
         for i in 0..(lines.len()-1) { // Note that the last element of lines is an empty list.
             let mut l: Vec<&str> = lines[i].split(" ").collect();
@@ -100,35 +108,37 @@ impl Mesh {
                     v.z = l[3].parse::<f64>().unwrap();
                     v.w = 1.0;
 
-                    vertex_data.push(v);
+                    mesh.verticies.push(v);
                 },
 
                 "f" => {
-                    let mut f = Face::from(
-                        l[1].parse::<usize>().unwrap(),
-                        l[2].parse::<usize>().unwrap(),
-                        l[3].parse::<usize>().unwrap(),
-                        Colour::Grey(0.0);
+                    let mut f = Face::new(
+                        &mesh.verticies[l[1].parse::<usize>().unwrap()],
+                        &mesh.verticies[l[2].parse::<usize>().unwrap()],
+                        &mesh.verticies[l[3].parse::<usize>().unwrap()],
+                        Colour::Grey(0.0)
                     );
-                }
+                },
+
+                _ => return Err(String::from("Error in file")),
             }
         }
 
-        Mesh {
-            name: name,
-            verticies: vec_data,
-            faces: face_data,
-            pos: pos,
-            rot: rot,
-        }
+        Ok(mesh) 
     }
 }
 
-impl Face {
-    fn new(v1: usize, v2: usize, v3: usize, colour: Colour) -> Face {
+impl<'a> Face<'a> {
+    fn new(v1: &'a Vector, v2: &'a Vector, v3: &'a Vector, colour: Colour) -> Face<'a> {
         Face {
             verticies: [v1, v2, v3],
             colour: colour,
         }
     } 
+
+    fn normal(&self) -> Vector {
+        // TODO: Returns the cross product v1 x v2 where v1 is the vector between vertex 1 and
+        // vertex 2 and v2 is the vector between vertex 2 and vertex 3.
+        Vector::new()
+    }
 }

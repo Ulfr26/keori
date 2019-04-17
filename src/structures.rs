@@ -13,7 +13,7 @@ pub struct Vector {
 
 #[derive(Debug, Clone)]
 pub struct Matrix {
-    pub vals: [[f64; 54]; 4],
+    pub vals: [[f64; 4]; 4],
 }
 
 impl Vector {
@@ -53,6 +53,14 @@ impl Vector {
 
         v.normalise();
         v
+    }
+
+    pub fn dot_product(v1: Vector, v2: Vector) -> f64 {
+        return v1.x*v2.x+v1.y*v2.y+v1.z*v2.z;
+    }
+
+    pub fn cross_product(v1: Vector, v2: Vector) -> Vector {
+        return Vector::from(v1.y*v2.z-v1.z*v2.y, v1.z*v2.x-v1.x*v2.z, v1.x*v2.y-v1.y*v2.x, 0.0);
     }
 }
 
