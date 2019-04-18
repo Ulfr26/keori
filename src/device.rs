@@ -5,15 +5,15 @@ use crate::render_objects::*;
 use crate::structures::*;
 use std::cmp;
 
-pub struct Device<'a> {
+pub struct Device {
     // The width and height of the screen. This will of course be the dimensions of the terminal.
     pub dimensions: (usize, usize),
     pub camera: Camera,
-    pub meshes: Vec<Mesh<'a>>,
+    pub meshes: Vec<Mesh>,
     pub pixels: Vec<Colour>,
 }
 
-impl<'a> Device<'a> {
+impl Device {
     pub fn new(camera: Camera, meshes: Vec<Mesh>, colour_space: Colour) -> Device {
         let colour = match colour_space {
             Colour::Rgba(r,g,b,a) => Colour::Rgba(0.0, 0.0, 0.0, 0.0),
@@ -266,6 +266,7 @@ impl<'a> Device<'a> {
             self.draw_line_antialiased(p1, p2, colour.clone());
             self.draw_line_antialiased(p2, p3, colour.clone());
             self.draw_line_antialiased(p3, p1, colour.clone());
+            self.fill_triangle((p1.1, p1.0), (p2.1, p2.0), (p3.1, p3.0), colour.clone());
         }
 
         else {
@@ -273,26 +274,41 @@ impl<'a> Device<'a> {
             self.draw_line_fast((p1.0 as usize, p1.1 as usize), (p2.0 as usize, p2.1 as usize), colour.clone());
             self.draw_line_fast((p2.0 as usize, p2.1 as usize), (p3.0 as usize, p3.1 as usize), colour.clone());
             self.draw_line_fast((p3.0 as usize, p3.1 as usize), (p1.0 as usize, p1.1 as usize), colour.clone());
+            self.fill_triangle((p1.1, p1.0), (p2.1, p2.0), (p3.1, p3.0), colour.clone());
         }
     }
 
     pub fn fill_triangle(&self, p1: (f64, f64), p2: (f64, f64), p3: (f64, f64), colour: Colour) {
-        let min = (cmp::min(cmp::min(p1.0, p2.0), p3.0), cmp::min(cmp::min(p1.1, p2.1), p3.1));
-        let max = (cmp::max(cmp::max(p1.0, p2.0), p3.0), cmp::max(cmp::max(p1.1, p2.1), p3.1));
+        let min = (f64::min(f64::min(p1.0, p2.0), p3.0), f64::min(f64::min(p1.1, p2.1), p3.1));
+        let max = (f64::max(f64::max(p1.0, p2.0), p3.0), f64::max(f64::max(p1.1, p2.1), p3.1));
 
         let vs1 = (p2.0 - p1.0, p2.1 - p1.1);
         let vs2 = (p3.0 - p1.0, p3.1 - p1.1);
 
-        for x in (min.0)..(max.0+1) {
-            for y in (min.1)..(max.1+1) {
-                let q = (x - p1.0, y - p1.1);
+        for x in (min.0 as usize)..(max.0 as usize+1) {
+            for y in (min.1 as usize)..(max.1 as usize+1) {
+                let q = (x as f64 - p1.0, y as f64 - p1.1);
 
-                // TODO
+                let s = Device::cross_point(q, vs2) / Device::cross_point(vs1, vs2);
+                let t = Device::cross_point(vs1, q) / Device::cross_point(vs1, vs2);
+
+                if (s >= 0.0 && t >= 0.0) && (s+t <= 1.0) {
+                    self.draw_point(x as usize, y as usize, colour.clone());
+                }
             }
         }
     }
 
     fn cross_point(p1: (f64, f64), p2: (f64, f64)) -> f64 {
         return (p1.0*p2.1)-(p1.1*p2.0);
+    }
+
+    pub fn render(&self) {
+        // Wow, the main render function! Snazzy.
+        // First, generate the MVP matricies: Model, View, Projection.
+        // Model matrix: the matrix that describes the basic position, rotation and scaling of each
+        // mesh.
+        
+
     }
 }

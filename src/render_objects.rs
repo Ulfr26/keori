@@ -20,17 +20,18 @@ pub struct Camera {
 }
 
 #[derive(Debug, Clone)]
-pub struct Face<'a> {
-    pub verticies: [&'a Vector; 3],
+pub struct Face {
+    pub vertices: [usize; 3],
     pub colour: Colour,
+    pub normal: Vector,
 }
 
 // A mesh to be rendered. Contains vertex information and the like.
 #[derive(Debug, Clone)]
-pub struct Mesh<'a> {
+pub struct Mesh {
     pub name: String,
-    pub verticies: Vec<Vector>,
-    pub faces: Vec<Face<'a>>,
+    pub vertices: Vec<Vector>,
+    pub faces: Vec<Face>,
     pub pos: Vector,
     pub rot: Vector,
 }
@@ -53,23 +54,23 @@ impl Camera {
     }
 }
 
-impl<'a> Mesh<'a> {
-    pub fn new(name: String) -> Mesh<'a> {
+impl Mesh {
+    pub fn new(name: String) -> Mesh {
         Mesh {
             name: name,
-            verticies: Vec::new(),
+            vertices: Vec::new(),
             faces: Vec::new(),
             pos: Vector::new(),
             rot: Vector::new(),
         }
     }
 
-    pub fn from(name: String, verticies: Vec<Vector>, faces: Vec<Face<'a>>, pos: Vector, rot: Vector) -> Mesh<'a> {
+    pub fn from(name: String, vertices: Vec<Vector>, faces: Vec<Face>, pos: Vector, rot: Vector) -> Mesh {
         // This function is pretty much useless because actually implementing it would be horrific.
         // Instead, use from_file.
         Mesh {
             name: name,
-            verticies: verticies,
+            vertices: vertices,
             faces: faces,
             pos: pos,
             rot: rot,
@@ -78,7 +79,7 @@ impl<'a> Mesh<'a> {
 
     // Reads a file containing vector information and returns a mesh.
     // Much easier than just making a vector with the information like *some people I know*
-    pub fn from_file(name: String, filename: String, pos: Vector, rot: Vector) -> Result<Mesh<'a>, String> {
+    pub fn from_file(filename: String, pos: Vector, rot: Vector) -> Result<Mesh, String> {
         let mut f: File = File::open(filename).unwrap();
         let mut contents = String::new();
 
@@ -86,20 +87,27 @@ impl<'a> Mesh<'a> {
         
         let mut lines: Vec<&str> = contents.split("\n").collect();
         let mut vertex_data: Vec<Vector> = Vec::new();
-        let mut face_data: Vec<Face> = Vec::new();
+        let mut faces: Vec<([usize; 3], usize)> = Vec::new();
+        let mut normals: Vec<Vector> = Vec::new();
 
         let mut mesh = Mesh {
-            name: name,
-            verticies: Vec::new(),
+            name: String::new(),
+            vertices: Vec::new(),
             faces: Vec::new(),
             pos: pos,
             rot: rot,
         };
 
-        for i in 0..(lines.len()-1) { // Note that the last element of lines is an empty list.
-            let mut l: Vec<&str> = lines[i].split(" ").collect();
+        println!("1");
+
+        for i in 0..(lines.len()-1) { // Note that the last element of lines is an empty list.  
+            let mut l: Vec<&str> = lines[i].split(" ").collect(); 
 
             match l[0] {
+                "o" => {
+                    mesh.name = String::from(l[1]);
+                },
+
                 "v" => {
                     let mut v = Vector::new();
 
@@ -108,37 +116,74 @@ impl<'a> Mesh<'a> {
                     v.z = l[3].parse::<f64>().unwrap();
                     v.w = 1.0;
 
-                    mesh.verticies.push(v);
+                    vertex_data.push(v);
+                },
+                
+                "vn" => {
+                    let mut vn = Vector::new();
+
+                    vn.x = l[1].parse::<f64>().unwrap();
+                    vn.y = l[2].parse::<f64>().unwrap();
+                    vn.z = l[3].parse::<f64>().unwrap();
+                    vn.w = 0.0;
+
+                    normals.push(vn);
                 },
 
                 "f" => {
-                    let mut f = Face::new(
-                        &mesh.verticies[l[1].parse::<usize>().unwrap()],
-                        &mesh.verticies[l[2].parse::<usize>().unwrap()],
-                        &mesh.verticies[l[3].parse::<usize>().unwrap()],
-                        Colour::Grey(0.0)
-                    );
+                    let mut vertices = [0usize; 3];
+                    let mut normal = 0usize;
+
+                    for j in 1..l.len() {
+                        let vf: Vec<&str> = l[j].split("//").collect();
+                        if j == 1 {
+                            // We're assuming the normal is the same for each vector
+                            normal = vf[1].parse::<usize>().unwrap()-1;
+                        }
+
+                        vertices[j-1] = vf[0].parse::<usize>().unwrap()-1;
+                    }
+
+                    faces.push((vertices, normal));
                 },
 
-                _ => return Err(String::from("Error in file")),
+                _ => {}
             }
         }
+
+        println!("2");
+
+        let mut face_structs: Vec<Face> = Vec::new();
+
+        for i in 0..faces.len() {
+            let test = normals[faces[i].1].clone();
+
+            face_structs.push(
+                Face::from(faces[i].0[0], faces[i].0[1], faces[i].0[2], normals[faces[i].1].clone(), Colour::Grey(1.0)) // TODO Actually calculate colour
+            );
+        }
+
+        mesh.vertices = vertex_data;
+        mesh.faces = face_structs;
 
         Ok(mesh) 
     }
 }
 
-impl<'a> Face<'a> {
-    fn new(v1: &'a Vector, v2: &'a Vector, v3: &'a Vector, colour: Colour) -> Face<'a> {
+impl Face {
+    fn from(v1: usize, v2: usize, v3: usize, normal: Vector, colour: Colour) -> Face {
         Face {
-            verticies: [v1, v2, v3],
+            vertices: [v1, v2, v3],
             colour: colour,
+            normal: normal,
         }
     } 
 
-    fn normal(&self) -> Vector {
-        // TODO: Returns the cross product v1 x v2 where v1 is the vector between vertex 1 and
-        // vertex 2 and v2 is the vector between vertex 2 and vertex 3.
-        Vector::new()
+    fn new() -> Face {
+        Face {
+            vertices: [0; 3],
+            colour: Colour::Grey(1.0),
+            normal: Vector::new(),
+        }
     }
 }
