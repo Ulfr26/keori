@@ -49,8 +49,7 @@ impl Camera {
         Camera {
             pos: pos,
             target: target,
-            up: up,
-        }
+            up: up, }
     }
 }
 
@@ -97,8 +96,6 @@ impl Mesh {
             pos: pos,
             rot: rot,
         };
-
-        println!("1");
 
         for i in 0..(lines.len()-1) { // Note that the last element of lines is an empty list.  
             let mut l: Vec<&str> = lines[i].split(" ").collect(); 
@@ -150,8 +147,6 @@ impl Mesh {
                 _ => {}
             }
         }
-
-        println!("2");
 
         let mut face_structs: Vec<Face> = Vec::new();
 

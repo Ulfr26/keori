@@ -36,6 +36,16 @@ impl Device {
     pub fn clear_screen(&self) {
         print!("{}[2J", 27 as char);
     }
+    
+    pub fn show_cursor(&self, show: bool) {
+        if show {
+            print!("{}[?25h", 27 as char);
+        }
+
+        else {
+            print!("{}[?25l", 27 as char);
+        }
+    }
 
     fn move_cursor_to(&self, x: usize, y: usize) {
         print!("{}[{};{}H", 27 as char, (x+1).to_string(), (y+1).to_string());
@@ -308,7 +318,50 @@ impl Device {
         // First, generate the MVP matricies: Model, View, Projection.
         // Model matrix: the matrix that describes the basic position, rotation and scaling of each
         // mesh.
+        let mvp_matrices: Vec<Matrix> = Vec::new();
         
+        for m in &self.meshes {
+            let position = Matrix::translation_from(m.pos.clone());
+            
+        }
+         
+    }
 
+    pub fn test_render(&self) {
+        // Gives an orthographic projection from the top. I use this only as a sanity check - it
+        // doesn't do any real perspective or anything that requires complex linear transformations
+        for m in &self.meshes {
+            for f in &m.faces {
+                let v = (
+                    m.vertices[f.vertices[0]].clone(),
+                    m.vertices[f.vertices[1]].clone(),
+                    m.vertices[f.vertices[2]].clone()
+                );
+
+                let scale_factor = 1.0;
+
+                let scale  = (scale_factor * (self.dimensions.0 as f64 / 7.5), -scale_factor * (self.dimensions.1 as f64 / 4.0));
+                let offset = (self.dimensions.0 as f64 / 3.0, self.dimensions.1 as f64 / 3.0);
+
+                let points = [
+                    (
+                        ((v.0.x * scale.0) + offset.0),
+                        ((v.0.z * scale.1) + offset.1),
+                    ),
+
+                    (
+                        ((v.1.x * scale.0) + offset.0),
+                        ((v.1.z * scale.1) + offset.1),
+                    ),
+
+                    (
+                        ((v.2.x * scale.0) + offset.0),
+                        ((v.2.z * scale.1) + offset.1),
+                    )
+                ];
+
+                self.draw_triangle(points[0], points[1], points[2], Colour::Grey(0.8), true);
+            }
+        }
     }
 }

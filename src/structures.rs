@@ -94,6 +94,27 @@ impl Matrix {
             vals: [[0f64; 4]; 4],
         }
     }
+
+    pub fn translation_from(v: Vector) -> Matrix {
+        Matrix {
+            vals: [[1.0, 0.0, 0.0, v.x],
+                   [0.0, 1.0, 0.0, v.y],
+                   [0.0, 0.0, 1.0, v.z],
+                   [0.0, 0.0, 0.0, 1.0]]
+        }
+    }
+
+    pub fn perspective(angle: f64, ratio: f64, near: f64, far: f64) -> Matrix {
+        // (THA stands for tan-half-angle - thought the variable name was unwieldy
+        let tha = (angle/2f64).tan();
+
+        Matrix {
+            vals: [[1.0/(ratio * tha), 0.0, 0.0, 0.0],
+                   [0.0, 1.0/tha, 0.0, 0.0],
+                   [0.0, 0.0, -(far + near)/(far - near), -(2.0*far*near)/(far-near)],
+                   [0.0, 0.0, -1.0, 0.0]]
+        }
+    }
 }
 
 impl Mul<Vector> for Matrix {
