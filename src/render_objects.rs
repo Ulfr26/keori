@@ -1,9 +1,10 @@
 // The objects that help render and are to be rendered. Built on the data structures as defined in
 // structures.rs.
 
-use crate::structures::Vector;
+use crate::structures::*;
 use std::fs::File;
 use std::io::prelude::*;
+use std::ops::Mul;
 
 #[derive(Debug, Clone)]
 pub enum Colour {
@@ -162,6 +163,20 @@ impl Mesh {
         mesh.faces = face_structs;
 
         Ok(mesh) 
+    }
+}
+
+impl Mul<Matrix> for Mesh {
+    type Output = Mesh;
+
+    fn mul(self, rhs: Matrix) -> Mesh {
+        let mut m = self.clone();
+        
+        for i in 0..m.vertices.len() {
+            m.vertices[i] = rhs.clone()*m.vertices[i].clone();
+        }
+
+        m
     }
 }
 

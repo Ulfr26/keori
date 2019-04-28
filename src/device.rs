@@ -321,7 +321,7 @@ impl Device {
         let mvp_matrices: Vec<Matrix> = Vec::new();
         
         for m in &self.meshes {
-            let position = Matrix::translation_from(m.pos.clone());
+            let position = Matrix::translation(m.pos.clone());
             
         }
          

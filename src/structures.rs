@@ -95,12 +95,28 @@ impl Matrix {
         }
     }
 
-    pub fn translation_from(v: Vector) -> Matrix {
+    pub fn translation(v: Vector) -> Matrix {
         Matrix {
             vals: [[1.0, 0.0, 0.0, v.x],
                    [0.0, 1.0, 0.0, v.y],
                    [0.0, 0.0, 1.0, v.z],
                    [0.0, 0.0, 0.0, 1.0]]
+        }
+    }
+
+    pub fn rotation(angle: f64, axis: Vector) -> Matrix {
+        let uvec = axis.normalised();
+        let ux = uvec.x;
+        let uy = uvec.y;
+        let uz = uvec.z;
+
+        Matrix {
+            vals: [
+                [angle.cos()+ux.powf(2.0)*(1.0-angle.cos()), ux*uy*(1.0-angle.cos())-uz*angle.sin(), ux*uz*(1.0-angle.cos())+uy*angle.sin(), 0.0],
+                [uy*ux*(1.0-angle.cos())+uz*angle.sin(), angle.cos()+uy.powf(2.0)*(1.0-angle.cos()), uy*uz*(1.0-angle.cos())-ux*angle.sin(), 0.0],
+                [uz*ux*(1.0-angle.cos())-uy*angle.sin(), uz*uy*(1.0-angle.cos())+ux*angle.sin(), angle.cos()+uz.powf(2.0)*(1.0-angle.cos()), 0.0],
+                [0.0, 0.0, 0.0, 0.0]
+            ]
         }
     }
 
